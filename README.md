@@ -1,7 +1,7 @@
 iterlib
 ======
-This library provides composable generator functions which facilitate fancy
-iteration patterns with Python.
+This library provides composable memory efficient generator functions which
+facilitate fancy iteration patterns with Python.
 
 ## Usage:
 ```python
