@@ -1,14 +1,14 @@
 
 
-import represent
+import iterlib
 
 from distutils.core import setup
 
-setup(name=represent.__name__,
-      version=represent.__version__,
-      description=represent.__doc__,
-      author=represent.__author__,
-      author_email=represent.__email__,
-      url=represent.__url__,
-      py_modules=[represent.__name__])
+setup(name=iterlib.__name__,
+      version=iterlib.__version__,
+      description=iterlib.__doc__,
+      author=iterlib.__author__,
+      author_email=iterlib.__email__,
+      url=iterlib.__url__,
+      packages=[iterlib.__name__])
 

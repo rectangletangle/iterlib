@@ -1,5 +1,9 @@
-""" This module contains a bunch of functions which facilitate specialized iteration patterns. """
+""" This package contains a bunch of composable functions which help facilitate specialized iteration patterns. """
 
+__version__ = '0.0.0'
+__author__  = 'Drew A. French'
+__email__   = 'rectangletangle@gmail.com'
+__url__     = 'github.com/rectangletangle'
 
 import itertools
 import collections
