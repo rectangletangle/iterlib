@@ -1,4 +1,4 @@
-""" This package contains a bunch of composable functions which help facilitate specialized iteration patterns. """
+""" This module contains a bunch of composable functions which help facilitate specialized iteration patterns. """
 
 __version__ = '0.0.0'
 __author__  = 'Drew A. French'
@@ -16,8 +16,10 @@ def windowed(iterable, size, step=1, trail=False):
         function yields "overlapped" tuples. If the <trail> argument is true the remaining tuples shorter than <size>
         at the end of iterable will be also yielded. """
 
+    # todo: step > size bug
+
     if size == 0:
-        pass # Yields nothing special case.
+        pass # Yields nothing for this special case.
 
     elif size == 1 and step == 1:
         # An efficient implementation for this particular special case.
@@ -57,7 +59,6 @@ def chopped(iterable, size):
             else:
                 yield chunk
 
-
 def _amount_error(amount):
     return ValueError('The amount <{}> must be <None> or an integer greater than -1.'.format(repr(amount)))
 
@@ -90,6 +91,8 @@ def skipped(iterable, amount):
 
 def truncated(iterable, amount):
     """ Iterate over all but the last few items in an iterable. """
+
+    # todo: use normal slice when possible
 
     if amount is None:
         for item in iterable:
