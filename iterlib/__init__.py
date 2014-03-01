@@ -4,17 +4,25 @@
 import itertools
 import collections
 
-__all__ = ['windowed', 'chunked', 'chop', 'generates', 'truncated', 'paired', 'united', 'flattened']
+__all__ = ['windowed', 'chunked', 'chopped', 'head', 'tail', 'skipped', 'truncated', 'paired', 'united', 'flattened',
+           'generates']
 
 def windowed(iterable, size, step=1, trail=False):
     """ This function yields a tuple of a given size, then steps forward. If the step is smaller than the size, the
-        function yields "overlapped" tuples. """
+        function yields "overlapped" tuples. If the <trail> argument is true the remaining tuples shorter than <size>
+        at the end of iterable will be also yielded. """
 
-    if size == 1 and step == 1:
-        # A more efficient implementation for this particular special case.
+    if size == 0:
+        pass # Yields nothing special case.
+
+    elif size == 1 and step == 1:
+        # An efficient implementation for this particular special case.
+
         for item in iterable:
             yield (item,)
     else:
+        # The general case.
+
         window = ()
         for item in iterable:
             window += (item,)
@@ -33,49 +41,75 @@ def chunked(iterable, size, trail=False):
 
     return windowed(iterable, size=size, step=size, trail=trail)
 
-def chop(iterable, size):
-    """ This removes any chunks at the end of an iterable, below a certain size. """
+def chopped(iterable, size):
+    """ This removes trailing chunks at the end of an iterable below a certain size. """
 
     if size > 0:
         for chunk in iterable:
             try:
-                chunk[size-1] # Easier to Ask for Forgiveness Than Permission, style length testing
+                chunk[size - 1] # "Easier to ask for forgiveness than permission," style length testing!
             except IndexError:
                 break
             else:
                 yield chunk
 
-def generates(generator, default=None):
-    """ If a generator doesn't generate anything this returns the <default> (None), otherwise this returns an
-        equivalent generator. """
 
-    iterable = iter(generator)
+def _amount_error(amount):
+    return ValueError('The amount <{}> must be <None> or an integer greater than -1.'.format(repr(amount)))
 
-    try:
-        first = next(iterable)
-    except StopIteration:
-        return default
+def head(iterable, amount):
+    """ Iterate over the first few items in an iterable. """
+
+    if amount is not None and not isinstance(amount, int):
+        raise _amount_error(amount)
     else:
-        return itertools.chain((first,), iterable)
+        try:
+            return itertools.islice(iterable, amount)
+        except ValueError:
+            raise _amount_error(amount)
+
+def tail(iterable, amount):
+    """ Iterate over the last few items in an iterable. """
+
+    raise NotImplementedError
+
+def skipped(iterable, amount):
+    """ Iterate over all but the first few items in an iterable. """
+
+    if amount is not None and not isinstance(amount, int):
+        raise _amount_error(amount)
+    else:
+        try:
+            return itertools.islice(iterable, amount, None)
+        except ValueError:
+            raise _amount_error(amount)
 
 def truncated(iterable, amount):
-    """ This allows for iteration over all but the last couple of items in an iterable. """
+    """ Iterate over all but the last few items in an iterable. """
 
-    queue   = collections.deque()
-    append  = queue.append
-    popleft = queue.popleft
+    if amount is None:
+        for item in iterable:
+            yield item
+    elif amount < 0 or not isinstance(amount, int):
+        raise _amount_error(amount)
+    else:
+        queue   = collections.deque()
+        append  = queue.append
+        popleft = queue.popleft
 
-    for item in iterable:
-        append(item)
+        for item in iterable:
+            append(item)
 
-        if len(queue) > amount:
-            yield popleft()
+            if len(queue) > amount:
+                yield popleft()
 
 def paired(iterable):
+    """ Chunk an iterable into overlapping pairs. """
+
     return windowed(iterable, size=2, step=1)
 
 def united(paired):
-    """ This can be used to efficiently undo the effects of the <paired> function on an iterable. """
+    """ Reunite the items from a paired iterable. """
 
     paired = iter(paired)
 
@@ -90,14 +124,35 @@ def united(paired):
             yield second
 
 def flattened(iterable, basecase=None):
+    """ Flatten a nested iterable. """
+
     if basecase is None:
         def basecase(iterable):
-            return not hasattr(iterable, '__iter__')
+            try:
+                iterable.__iter__
+            except AttributeError:
+                return True
+            else:
+                return False
 
-    if not basecase(iterable):
-        for item in iterable:
-            yield from flattened(item, basecase=basecase)
-    else:
+    if basecase(iterable):
         item = iterable
         yield item
+    else:
+        for item in iterable:
+            for nested in flattened(item, basecase=basecase):
+                yield nested
+
+def generates(generator, default=None):
+    """ If a generator doesn't generate anything, i.e., it's empty, this returns the <default> (<None>), otherwise this
+        returns an equivalent generator. """
+
+    iterable = iter(generator)
+
+    try:
+        first = next(iterable)
+    except StopIteration:
+        return default
+    else:
+        return itertools.chain((first,), iterable)
 
