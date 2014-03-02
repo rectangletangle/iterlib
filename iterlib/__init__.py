@@ -11,15 +11,13 @@ import collections
 __all__ = ['windowed', 'chunked', 'chopped', 'head', 'tail', 'skipped', 'truncated', 'paired', 'united', 'flattened',
            'generates']
 
-def windowed(iterable, size, step=1, trail=False):
+def windowed(iterable, size, step=1, partial=False):
     """ This function yields a tuple of a given size, then steps forward. If the step is smaller than the size, the
-        function yields "overlapped" tuples. If the <trail> argument is true the remaining tuples shorter than <size>
+        function yields "overlapped" tuples. If the <partial> argument is true the remaining tuples shorter than <size>
         at the end of iterable will be also yielded. """
 
-    # todo: step > size bug
-
     if size == 0:
-        pass # Yields nothing for this special case.
+        pass # Quickly yields nothing for this special case.
 
     elif size == 1 and step == 1:
         # An efficient implementation for this particular special case.
@@ -30,25 +28,37 @@ def windowed(iterable, size, step=1, trail=False):
         # The general case.
 
         window = ()
+        overshoot = 0
         for item in iterable:
-            window += (item,)
 
-            if len(window) == size:
+            if overshoot < 0:
+                overshoot += 1
+            else:
+                window += (item,)
+
+            length = len(window)
+
+            if length == size:
                 yield window
+
+                overshoot = length - step
+                if overshoot > 0:
+                    overshoot = 0
+
                 window = window[step:]
 
-        if trail:
+        if partial:
             while len(window):
                 yield window
                 window = window[step:]
 
-def chunked(iterable, size, trail=False):
+def chunked(iterable, size, partial=False):
     """ This breaks up an iterable into multiple chunks (tuples) of a specific size. """
 
-    return windowed(iterable, size=size, step=size, trail=trail)
+    return windowed(iterable, size=size, step=size, partial=partial)
 
 def chopped(iterable, size):
-    """ This removes trailing chunks at the end of an iterable below a certain size. """
+    """ This removes undersized chunks at the end of an iterable below a certain size. """
 
     if size > 0:
         for chunk in iterable:
@@ -162,4 +172,3 @@ def generates(generator, default=None):
         return default
     else:
         return itertools.chain((first,), iterable)
-

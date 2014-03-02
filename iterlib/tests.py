@@ -29,10 +29,11 @@ class TestWindowed(_TestIter):
     def test_windows_of_one(self):
         self.assert_iter_equal(windowed(range(6), 1), [(0,), (1,), (2,), (3,), (4,), (5,)])
 
-    def test_trail(self):
-        self.assert_iter_equal(windowed(range(4), 3, trail=True), [(0, 1, 2), (1, 2, 3), (2, 3), (3,)])
-        self.assert_iter_equal(windowed(range(4), 3, 2, trail=True), [(0, 1, 2), (2, 3)])
-        self.assert_iter_equal(windowed(range(4), 3, 3, trail=True), [(0, 1, 2), (3,)])
+    def test_partial(self):
+        self.assert_iter_equal(windowed(range(4), 3, partial=True), [(0, 1, 2), (1, 2, 3), (2, 3), (3,)])
+        self.assert_iter_equal(windowed(range(4), 3, 2, partial=True), [(0, 1, 2), (2, 3)])
+        self.assert_iter_equal(windowed(range(4), 3, 3, partial=True), [(0, 1, 2), (3,)])
+        self.assert_iter_equal(windowed(range(7), 3, 5, partial=True), [(0, 1, 2), (5, 6)])
 
     def test_evenly_divisible(self):
         self.assert_iter_equal(windowed(range(6), 3, 3), [(0, 1, 2), (3, 4, 5)])
@@ -47,11 +48,15 @@ class TestWindowed(_TestIter):
         self.assert_iter_equal(windowed(range(6), 3, 2), [(0, 1, 2), (2, 3, 4)])
         self.assert_iter_equal(windowed(range(7), 3, 2), [(0, 1, 2), (2, 3, 4), (4, 5, 6)])
 
+        self.assert_iter_equal(windowed(range(7), 3, 4), [(0, 1, 2), (4, 5, 6)])
+        self.assert_iter_equal(windowed(range(8), 3, 4), [(0, 1, 2), (4, 5, 6)])
+        self.assert_iter_equal(windowed(range(11), 3, 4), [(0, 1, 2), (4, 5, 6), (8, 9, 10)])
+
 class TestChunked(_TestIter):
     def test_empty(self):
         chunks = [chunked(range(0), 0),
                   chunked(range(0), 3),
-                  chunked(range(0), 3, trail=True)]
+                  chunked(range(0), 3, partial=True)]
 
         for chunk in chunks:
             self.assert_iter_equal(chunk, [])
@@ -60,11 +65,11 @@ class TestChunked(_TestIter):
         self.assert_iter_equal(chunked(range(1), 1), [(0,)])
         self.assert_iter_equal(chunked(range(1), 2), [])
 
-    def test_trail(self):
-        self.assert_iter_equal(chunked(range(4), 3, trail=True), [(0, 1, 2), (3,)])
-        self.assert_iter_equal(chunked(range(2), 3, trail=True), [(0, 1)])
+    def test_partial(self):
+        self.assert_iter_equal(chunked(range(4), 3, partial=True), [(0, 1, 2), (3,)])
+        self.assert_iter_equal(chunked(range(2), 3, partial=True), [(0, 1)])
 
-    def test_no_trail(self):
+    def test_no_partial(self):
         self.assert_iter_equal(chunked(range(7), 3), [(0, 1, 2), (3, 4, 5)])
         self.assert_iter_equal(chunked(range(6), 3), [(0, 1, 2), (3, 4, 5)])
         self.assert_iter_equal(chunked(range(2), 3), [])
@@ -79,10 +84,10 @@ class TestChopped(_TestIter):
         self.assert_iter_equal(chopped(paired(range(1)), 0), [])
         self.assert_iter_equal(chopped(paired(range(1)), -1), [])
 
-    def test_chop_trail(self):
+    def test_chop_partial(self):
         size = 3
-        self.assert_iter_equal(chopped(windowed(range(4), size, 1, trail=True), size), [(0, 1, 2), (1, 2, 3)])
-        self.assert_iter_equal(chopped(chunked(range(7), size, trail=True), size), [(0, 1, 2), (3, 4, 5)])
+        self.assert_iter_equal(chopped(windowed(range(4), size, 1, partial=True), size), [(0, 1, 2), (1, 2, 3)])
+        self.assert_iter_equal(chopped(chunked(range(7), size, partial=True), size), [(0, 1, 2), (3, 4, 5)])
 
 class _CommonLimitTests:
     def test_empty(self):
