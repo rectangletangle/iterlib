@@ -12,15 +12,21 @@ __all__ = ['windowed', 'chunked', 'chopped', 'head', 'tail', 'skipped', 'truncat
            'generates']
 
 def windowed(iterable, size, step=1, partial=False):
-    """ This function yields a tuple of a given size, then steps forward. If the step is smaller than the size, the
-        function yields "overlapped" tuples. If the <partial> argument is true the remaining tuples shorter than <size>
-        at the end of iterable will be also yielded. """
+    """ This function repeatedly yields "windows" (tuples) of a certain size from an iterable. The step argument
+        adjusts the distance between each window. If the step is smaller than the size, the function yields
+        "overlapped" windows.
 
-    if size == 0:
+        If the partial argument is true remaining undersized windows at the end of the iterable will also be
+        yielded. """
+
+    size = 0 if size is None else size
+    step = 0 if step is None else step
+
+    if step < 1 or size < 1:
         pass # Quickly yields nothing for this special case.
 
     elif size == 1 and step == 1:
-        # An efficient implementation for this particular special case.
+        # A more efficient implementation for this particular special case.
 
         for item in iterable:
             yield (item,)
@@ -41,6 +47,7 @@ def windowed(iterable, size, step=1, partial=False):
             if length == size:
                 yield window
 
+                # This prevents appending to the window when there are supposed to be gaps between the windows.
                 overshoot = length - step
                 if overshoot > 0:
                     overshoot = 0
@@ -58,51 +65,62 @@ def chunked(iterable, size, partial=False):
     return windowed(iterable, size=size, step=size, partial=partial)
 
 def chopped(iterable, size):
-    """ This removes undersized chunks at the end of an iterable below a certain size. """
+    """ This removes undersized windows/chunks at the end of an iterable. """
+
+    size = 0 if size is None else size
 
     if size > 0:
-        for chunk in iterable:
+        for window in iterable:
             try:
-                chunk[size - 1] # "Easier to ask for forgiveness than permission," style length testing!
+                window[size - 1] # "Easier to ask for forgiveness than permission," style length testing!
             except IndexError:
                 break
             else:
-                yield chunk
+                yield window
 
 def _amount_error(amount):
     return ValueError('The amount <{}> must be <None> or an integer greater than -1.'.format(repr(amount)))
 
+def _check_amount(amount):
+    if amount is not None and not isinstance(amount, int):
+        raise _amount_error(amount)
+
 def head(iterable, amount):
     """ Iterate over the first few items in an iterable. """
 
-    if amount is not None and not isinstance(amount, int):
+    _check_amount(amount)
+
+    try:
+        return itertools.islice(iterable, amount)
+    except ValueError:
         raise _amount_error(amount)
-    else:
-        try:
-            return itertools.islice(iterable, amount)
-        except ValueError:
-            raise _amount_error(amount)
 
 def tail(iterable, amount):
     """ Iterate over the last few items in an iterable. """
 
-    raise NotImplementedError
+    _check_amount(amount)
+
+    queue  = collections.deque(maxlen=amount)
+    append = queue.append
+
+    for item in iterable:
+        append(item)
+
+    for item in queue:
+        yield item
 
 def skipped(iterable, amount):
     """ Iterate over all but the first few items in an iterable. """
 
-    if amount is not None and not isinstance(amount, int):
+    _check_amount(amount)
+
+    try:
+        return itertools.islice(iterable, amount, None)
+    except ValueError:
         raise _amount_error(amount)
-    else:
-        try:
-            return itertools.islice(iterable, amount, None)
-        except ValueError:
-            raise _amount_error(amount)
 
 def truncated(iterable, amount):
     """ Iterate over all but the last few items in an iterable. """
-
-    # todo: use normal slice when possible
 
     if amount is None:
         for item in iterable:
@@ -121,12 +139,12 @@ def truncated(iterable, amount):
                 yield popleft()
 
 def paired(iterable):
-    """ Chunk an iterable into overlapping pairs. """
+    """ This makes an iterable of overlapping pairs. """
 
     return windowed(iterable, size=2, step=1)
 
 def united(paired):
-    """ Reunite the items from a paired iterable. """
+    """ This reunites the items from a paired iterable. """
 
     paired = iter(paired)
 
@@ -161,7 +179,7 @@ def flattened(iterable, basecase=None):
                 yield nested
 
 def generates(generator, default=None):
-    """ If a generator doesn't generate anything, i.e., it's empty, this returns the <default> (<None>), otherwise this
+    """ If a generator doesn't generate anything, i.e., it's empty, this returns the default (<None>), otherwise this
         returns an equivalent generator. """
 
     iterable = iter(generator)

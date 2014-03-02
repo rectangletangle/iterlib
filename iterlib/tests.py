@@ -1,5 +1,4 @@
 
-
 import unittest
 
 from iterlib import windowed, chunked, chopped, head, tail, skipped, truncated, paired, united, flattened, generates
@@ -10,11 +9,17 @@ class _TestIter(unittest.TestCase):
 
 class TestWindowed(_TestIter):
     def test_empty(self):
-        windows = [windowed(range(0), 0),
-                   windowed(range(0), 0, 0),
-                   windowed(range(234), 0),
-                   windowed(range(234), 0, 0),
-                   windowed(range(0), 1),
+        for size in [0, 1, 234]:
+            for null in [0, None, -1]:
+                windows = [windowed(range(size), null),
+                           windowed(range(size), null, null),
+                           windowed(range(size), null, 1),
+                           windowed(range(size), 1, null)]
+
+                for window in windows:
+                    self.assert_iter_equal(window, [])
+
+        windows = [windowed(range(0), 1),
                    windowed(range(0), 3, 2),
                    windowed(range(0), 30000, 2312)]
 
@@ -55,6 +60,8 @@ class TestWindowed(_TestIter):
 class TestChunked(_TestIter):
     def test_empty(self):
         chunks = [chunked(range(0), 0),
+                  chunked(range(0), -1),
+                  chunked(range(0), None),
                   chunked(range(0), 3),
                   chunked(range(0), 3, partial=True)]
 
@@ -76,13 +83,13 @@ class TestChunked(_TestIter):
 
 class TestChopped(_TestIter):
     def test_empty(self):
-        self.assert_iter_equal(chopped(paired(range(0)), 1), [])
-        self.assert_iter_equal(chopped(paired(range(0)), 0), [])
+        for value in [-1, None, 0, 1]:
+            self.assert_iter_equal(chopped(paired(range(0)), value), [])
 
-    def test_single(self):
-        self.assert_iter_equal(chopped(paired(range(1)), 1), [])
-        self.assert_iter_equal(chopped(paired(range(1)), 0), [])
-        self.assert_iter_equal(chopped(paired(range(1)), -1), [])
+    def test_values(self):
+        for value in [-1, 1, 10]:
+            for input_ in [-1, None, 0]:
+                self.assert_iter_equal(chopped(paired(range(value)), input_), [])
 
     def test_chop_partial(self):
         size = 3
@@ -91,63 +98,59 @@ class TestChopped(_TestIter):
 
 class _CommonLimitTests:
     def test_empty(self):
-        self.assert_iter_equal(self.function(range(0), None), [])
-        self.assert_iter_equal(self.function(range(0), 0), [])
-        self.assert_iter_equal(self.function(range(0), 1), [])
-        self.assert_iter_equal(self.function(range(0), 13), [])
+        for input_ in [None, 0, 1, 12]:
+            self.assert_iter_equal(self.function(range(0), input_), [])
 
     def test_exceptions(self):
         self.assertRaises(ValueError, lambda: list(self.function(range(0), -1)))
         self.assertRaises(ValueError, lambda: list(self.function(range(313), -1)))
         self.assertRaises(ValueError, lambda: list(self.function(range(0), 23.123)))
 
-class TestHead(_CommonLimitTests, _TestIter):
+    def test_other(self, outputs):
+        for input_, output in zip([None, 0, 1, 2], outputs):
+            self.assert_iter_equal(self.function(range(10), input_), output)
+
+class _CommonOuterTests(_CommonLimitTests):
+    def test_single(self):
+        for input_, correct in [(0, []), (1, [0]), (2, [0])]:
+            self.assert_iter_equal(self.function(range(1), input_), correct)
+
+class TestHead(_CommonOuterTests, _TestIter):
     def function(self, *args, **kw):
         return head(*args, **kw)
 
-    def test_single(self):
-        self.assert_iter_equal(head(range(1), 0), [])
-        self.assert_iter_equal(head(range(1), 1), [0])
-        self.assert_iter_equal(head(range(1), 2), [0])
+    def test_other(self):
+        lst = list(range(10))
+        _CommonOuterTests.test_other(self, [lst, [], lst[:1], lst[:2]])
+
+class TestTail(_CommonOuterTests, _TestIter):
+    def function(self, *args, **kw):
+        return tail(*args, **kw)
 
     def test_other(self):
-        self.assert_iter_equal(head(range(10), None), list(range(10)))
-        self.assert_iter_equal(head(range(10), 0), [])
-        self.assert_iter_equal(head(range(10), 1), list(range(10))[:1])
-        self.assert_iter_equal(head(range(10), 2), list(range(10))[:2])
+        lst = list(range(10))
+        _CommonOuterTests.test_other(self, [lst, [], lst[-1:], lst[-2:]])
 
-class TestTail(_TestIter):
-    pass
+class _CommonInnerTests(_CommonLimitTests):
+    def test_single(self):
+        for input_, correct in [(0, [0]), (1, []), (2, [])]:
+            self.assert_iter_equal(self.function(range(1), input_), correct)
 
-class TestSkipped(_CommonLimitTests, _TestIter):
+class TestSkipped(_CommonInnerTests, _TestIter):
     def function(self, *args, **kw):
         return skipped(*args, **kw)
 
-    def test_single(self):
-        self.assert_iter_equal(skipped(range(1), 0), [0])
-        self.assert_iter_equal(skipped(range(1), 1), [])
-        self.assert_iter_equal(skipped(range(1), 2), [])
-
     def test_other(self):
-        self.assert_iter_equal(skipped(range(10), None), list(range(10)))
-        self.assert_iter_equal(skipped(range(10), 0), list(range(10)))
-        self.assert_iter_equal(skipped(range(10), 1), list(range(10))[1:])
-        self.assert_iter_equal(skipped(range(10), 2), list(range(10))[2:])
+        lst = list(range(10))
+        _CommonInnerTests.test_other(self, [lst, lst, lst[1:], lst[2:]])
 
-class TestTruncated(_CommonLimitTests, _TestIter):
+class TestTruncated(_CommonInnerTests, _TestIter):
     def function(self, *args, **kw):
         return truncated(*args, **kw)
 
-    def test_single(self):
-        self.assert_iter_equal(truncated(range(1), 0), [0])
-        self.assert_iter_equal(truncated(range(1), 1), [])
-        self.assert_iter_equal(truncated(range(1), 2), [])
-
-    def _test_other(self):
-        self.assert_iter_equal(truncated(range(10), None), list(range(10)))
-        self.assert_iter_equal(truncated(range(10), 0), list(range(10)))
-        self.assert_iter_equal(truncated(range(10), 1), list(range(10))[1:])
-        self.assert_iter_equal(truncated(range(10), 2), list(range(10))[2:])
+    def test_other(self):
+        lst = list(range(10))
+        _CommonInnerTests.test_other(self, [lst, lst, lst[:-1], lst[:-2]])
 
 class _CommonPairedTests:
     def test_empty(self):
@@ -161,6 +164,7 @@ class TestPaired(_CommonPairedTests, _TestIter):
         return paired(*args, **kw)
 
     def test_other(self):
+        self.assert_iter_equal(paired(range(3)), [(0, 1), (1, 2)])
         self.assert_iter_equal(paired(range(4)), [(0, 1), (1, 2), (2, 3)])
         self.assert_iter_equal(paired(range(5)), [(0, 1), (1, 2), (2, 3), (3, 4)])
 
