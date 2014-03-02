@@ -35,6 +35,7 @@ def windowed(iterable, size, step=1, partial=False):
 
         window = ()
         overshoot = 0
+
         for item in iterable:
 
             if overshoot < 0:
@@ -42,13 +43,11 @@ def windowed(iterable, size, step=1, partial=False):
             else:
                 window += (item,)
 
-            length = len(window)
-
-            if length == size:
+            if len(window) == size:
                 yield window
 
                 # This prevents appending to the window when there are supposed to be gaps between the windows.
-                overshoot = length - step
+                overshoot = size - step
                 if overshoot > 0:
                     overshoot = 0
 
