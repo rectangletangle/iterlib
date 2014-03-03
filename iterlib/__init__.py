@@ -166,7 +166,7 @@ def flattened(iterable, basecase=None):
             except AttributeError:
                 return True
             else:
-                return False
+                return isinstance(iterable, str)
 
     if basecase(iterable):
         item = iterable

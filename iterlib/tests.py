@@ -182,12 +182,14 @@ class TestFlattened(_TestIter):
         self.assert_iter_equal(flattened(range(0)), [])
 
     def test_nested(self):
+        self.assert_iter_equal(flattened([0]), [0])
+        self.assert_iter_equal(flattened(['a']), ['a'])
         self.assert_iter_equal(flattened([[], [[], []]]), [])
         self.assert_iter_equal(flattened([[[0]], [1, [2]], [3]]), [0, 1, 2, 3])
-        self.assert_iter_equal(flattened([[{0}], (), [1, ([2],), []], [3]]),
-                               [0, 1, 2, 3])
+        self.assert_iter_equal(flattened([[{0}], (), [1, ([2],), []], [3]]), [0, 1, 2, 3])
+        self.assert_iter_equal(flattened([[{0}], (), ['b', (['a'],), []], [3]]), [0, 'b', 'a', 3])
 
-    def test_basecase(self):
+    def test_custom_basecase(self):
 
         def basecase(iterable):
             return isinstance(iterable, tuple)
