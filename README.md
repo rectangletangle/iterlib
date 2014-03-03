@@ -9,7 +9,7 @@ The library's utility is best shown through example.
 Although lists are used for input in most of the functions below, the functions
 were purposely designed to work with any object that has an `__iter__` method. 
 This allows the functions to operate on a wide variety of Python objects, not 
-just those that support slice notation.
+just those that support the slice notation.
 ```python
 import iterlib
 
@@ -34,6 +34,7 @@ print(list(iterlib.flattened(nested)))
 ```
 
 ## Dependencies:
+This library supports both Python version 2 and 3 with a single source.
 * Python 2.7 - 3.x
 
 ## Installation:
