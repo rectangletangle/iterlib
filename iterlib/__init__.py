@@ -156,13 +156,18 @@ def united(paired):
         for first, second in paired:
             yield second
 
+try:
+    _strtype = basestring # Python 2.7
+except NameError:
+    _strtype = str # Python 3.x
+
 def _flattened_default_basecase(iterable):
     try:
         iterable.__iter__
     except AttributeError:
         return True
     else:
-        return isinstance(iterable, str)
+        return isinstance(iterable, _strtype)
 
 def flattened(iterable, basecase=None):
     """ Flatten a nested iterable. """

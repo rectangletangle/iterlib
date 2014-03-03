@@ -189,6 +189,14 @@ class TestFlattened(_TestIter):
         self.assert_iter_equal(flattened([[{0}], (), [1, ([2],), []], [3]]), [0, 1, 2, 3])
         self.assert_iter_equal(flattened([[{0}], (), ['b', (['a'],), []], [3]]), [0, 'b', 'a', 3])
 
+        # Python 2.7 unicode test
+        try:
+            unicode
+        except NameError:
+            pass
+        else:
+            self.assert_iter_equal(flattened([[unicode('a')], [unicode('b')]]), [unicode('a'), unicode('b')])
+
     def test_custom_basecase(self):
 
         def basecase(iterable):
