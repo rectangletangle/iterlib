@@ -33,7 +33,7 @@ print(list(iterlib.flattened(nested)))
 # are still removed. This prints `[0, 1, 2, 3]`.
 print(list(iterlib.truncated((i for i in range(6)), 2)))
 ```
-Although lists are used for input in most of the examples above, the functions
+Although lists are used for input in many of the examples above, the functions
 were purposely designed to work with any object that has an `__iter__` method.
 This allows the functions to operate on a wide variety of Python objects, not
 just those that support the slice notation.
