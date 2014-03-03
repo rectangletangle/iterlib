@@ -34,7 +34,8 @@ print(list(iterlib.flattened(nested)))
 ```
 
 ## Dependencies:
-This library supports both Python version 2 and 3 with a single source.
+This library supports both Python versions 2 and 3 with a single mutually
+intelligible source.
 * Python 2.7 - 3.x
 
 ## Installation:
