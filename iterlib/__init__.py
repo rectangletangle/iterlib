@@ -35,7 +35,6 @@ def windowed(iterable, size, step=1, partial=False):
 
         window = ()
         overshoot = 0
-
         for item in iterable:
 
             if overshoot < 0:
