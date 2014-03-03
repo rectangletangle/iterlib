@@ -184,6 +184,8 @@ class TestFlattened(_TestIter):
     def test_nested(self):
         self.assert_iter_equal(flattened([[], [[], []]]), [])
         self.assert_iter_equal(flattened([[[0]], [1, [2]], [3]]), [0, 1, 2, 3])
+        self.assert_iter_equal(flattened([[{0}], (), [1, ([2],), []], [3]]),
+                               [0, 1, 2, 3])
 
     def test_basecase(self):
 
